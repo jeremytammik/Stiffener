@@ -9,7 +9,6 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using FamilyItemFactory = Autodesk.Revit.Creation.FamilyItemFactory;
 #endregion
 
 namespace Stiffener
@@ -180,7 +179,8 @@ namespace Stiffener
       List<XYZ> pts,
       double thickness )
     {
-      FamilyItemFactory factory = doc.FamilyCreate;
+      Autodesk.Revit.Creation.FamilyItemFactory factory 
+        = doc.FamilyCreate;
 
       //CreationApplication creapp = doc.Application.Create;
 
