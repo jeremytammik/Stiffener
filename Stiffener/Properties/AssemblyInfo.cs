@@ -36,6 +36,7 @@ using System.Runtime.InteropServices;
 // 2011-06-13 1.0.0.0 initial implementation for Revit 2012
 // 2015-09-22 2014.0.0.0 migration to Revit 2014 including code update, .NET framework target 4.0, removal of architecture mismatch warning and obsolete API usage; img/stiffener_2014.png
 // 2015-09-22 2014.0.0.1 updated to place instance from in-memory family definition with no file save, restructured logic, added using statements around transactions; img/stiffener_2014_in_memory.png
+// 2015-09-22 2014.0.0.2 set family name after loading into project; img/stiffener_2014_in_memory_with_name.png
 //
-[assembly: AssemblyVersion( "2014.0.0.1" )]
-[assembly: AssemblyFileVersion( "2014.0.0.1" )]
+[assembly: AssemblyVersion( "2014.0.0.2" )]
+[assembly: AssemblyFileVersion( "2014.0.0.2" )]

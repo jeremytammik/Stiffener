@@ -38,7 +38,7 @@ namespace Stiffener
     /// </summary>
     const string _family_template_name = "Metric Structural Stiffener";
 
-    // family template path and filename for imperial units
+    // Family template path and filename for imperial units
 
     //const string _path = "C:/ProgramData/Autodesk/RST 2012/Family Templates/English_I";
     //const string _family_name = "Structural Stiffener";
@@ -102,8 +102,8 @@ namespace Stiffener
         .OfClass( targetType )
         .First<Element>( e => e.Name.Equals( targetName ) );
 
-      // parse the collection for the given name
-      // using LINQ query here. 
+      // Obsolete code parsing the collection for the 
+      // given name using a LINQ query. 
 
       //var targetElems 
       //  = from element in collector 
@@ -179,13 +179,8 @@ namespace Stiffener
       List<XYZ> pts,
       double thickness )
     {
-      Autodesk.Revit.Creation.FamilyItemFactory factory 
+      Autodesk.Revit.Creation.FamilyItemFactory factory
         = doc.FamilyCreate;
-
-      //CreationApplication creapp = doc.Application.Create;
-
-      //SketchPlane sketch = doc.get_Element( 
-      //  new ElementId( 501 ) ) as SketchPlane;
 
       SketchPlane sketch = FindElement( doc,
         typeof( SketchPlane ), "Ref. Level" )
@@ -258,6 +253,8 @@ namespace Stiffener
           t.Commit();
         }
 
+        //fdoc.Title = _family_name; // read-only property
+
         bool needToSaveBeforeLoad = false;
 
         if( needToSaveBeforeLoad )
@@ -309,6 +306,11 @@ namespace Stiffener
 
       //doc.LoadFamily( filename, out family );
 
+      // Setting the name requires an open 
+      // transaction, of course.
+
+      //family.Name = _family_name;
+
       FamilySymbol symbol = null;
 
       foreach( FamilySymbol s in family.Symbols )
@@ -327,6 +329,11 @@ namespace Stiffener
       using( t = new Transaction( doc ) )
       {
         t.Start( "Insert structural stiffener family instance" );
+
+        // Setting the name requires an open 
+        // transaction, of course.
+
+        family.Name = _family_name;
 
         bool useSimpleInsertionPoint = true;
 
@@ -348,7 +355,7 @@ namespace Stiffener
 
         if( useFaceReference )
         {
-          Reference r = uidoc.Selection.PickObject( 
+          Reference r = uidoc.Selection.PickObject(
             ObjectType.Face,
             "Please pick a point on a face for family instance insertion" );
 
