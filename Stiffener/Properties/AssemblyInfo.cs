@@ -39,6 +39,7 @@ using System.Runtime.InteropServices;
 // 2015-09-22 2014.0.0.2 set family name after loading into project; img/stiffener_2014_in_memory_with_name.png
 // 2015-09-22 2014.0.0.3 set 'copy local' to false on the Revit API assemblies
 // 2015-09-22 2015.0.0.0 flat migration to Revit 2015
+// 2015-09-22 2016.0.0.0 migration to Revit 2016, need to activate symbol, set symbol name as well as family; img/stiffener_2016_in_memory_with_both_names.png
 //
-[assembly: AssemblyVersion( "2015.0.0.0" )]
-[assembly: AssemblyFileVersion( "2015.0.0.0" )]
+[assembly: AssemblyVersion( "2016.0.0.0" )]
+[assembly: AssemblyFileVersion( "2016.0.0.0" )]

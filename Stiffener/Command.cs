@@ -335,6 +335,12 @@ namespace Stiffener
         // transaction, of course.
 
         family.Name = _family_name;
+        symbol.Name = _family_name;
+
+        // Need to activate symbol before 
+        // using it in Revit 2016.
+
+        symbol.Activate();
 
         bool useSimpleInsertionPoint = true;
 
