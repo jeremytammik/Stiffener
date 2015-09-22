@@ -313,12 +313,13 @@ namespace Stiffener
 
       FamilySymbol symbol = null;
 
-      foreach( FamilySymbol s in family.Symbols )
+      foreach( ElementId id 
+        in family.GetFamilySymbolIds() )
       {
-        symbol = s;
-
         // Our family only contains one
         // symbol, so pick it and leave.
+
+        symbol = doc.GetElement( id ) as FamilySymbol;
 
         break;
       }
