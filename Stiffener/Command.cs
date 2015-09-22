@@ -9,7 +9,6 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
-using CreationApplication = Autodesk.Revit.Creation.Application;
 using FamilyItemFactory = Autodesk.Revit.Creation.FamilyItemFactory;
 #endregion
 
@@ -39,7 +38,7 @@ namespace Stiffener
     /// Family template filename stem
     /// </summary>
     const string _family_template_name = "Metric Structural Stiffener";
-    
+
     // family template path and filename for imperial units
 
     //const string _path = "C:/ProgramData/Autodesk/RST 2012/Family Templates/English_I";
@@ -89,7 +88,7 @@ namespace Stiffener
     /// <summary>
     /// Extrusion thickness for stiffener plate
     /// </summary>
-    const double _thicknessMm = 20.0; 
+    const double _thicknessMm = 20.0;
 
     /// <summary>
     /// Return the first element found of the 
@@ -158,13 +157,13 @@ namespace Stiffener
       CurveArray profile = new CurveArray();
 
       int n = _countour.Count;
-      
+
       for( int i = 0; i < n; ++i )
       {
-        int j = (0 == i) ? n - 1 : i - 1;
+        int j = ( 0 == i ) ? n - 1 : i - 1;
 
         profile.Append( Line.CreateBound(
-          MmToFootPoint( pts[j] ), 
+          MmToFootPoint( pts[j] ),
           MmToFootPoint( pts[i] ) ) );
       }
       return profile;
@@ -176,20 +175,20 @@ namespace Stiffener
     /// in the given family document, which  must 
     /// contain a sketch plane named "Ref. Level".
     /// </summary>
-    Extrusion CreateExtrusion( 
-      Document doc, 
-      List<XYZ> pts, 
+    Extrusion CreateExtrusion(
+      Document doc,
+      List<XYZ> pts,
       double thickness )
     {
       FamilyItemFactory factory = doc.FamilyCreate;
-      
+
       //CreationApplication creapp = doc.Application.Create;
 
       //SketchPlane sketch = doc.get_Element( 
       //  new ElementId( 501 ) ) as SketchPlane;
 
-      SketchPlane sketch = FindElement( doc, 
-        typeof( SketchPlane ), "Ref. Level" ) 
+      SketchPlane sketch = FindElement( doc,
+        typeof( SketchPlane ), "Ref. Level" )
           as SketchPlane;
 
       CurveArrArray curveArrArray = new CurveArrArray();
@@ -198,7 +197,7 @@ namespace Stiffener
 
       double extrusionHeight = MmToFoot( thickness );
 
-      return factory.NewExtrusion( true, 
+      return factory.NewExtrusion( true,
         curveArrArray, sketch, extrusionHeight );
     }
 
@@ -211,6 +210,8 @@ namespace Stiffener
       UIDocument uidoc = uiapp.ActiveUIDocument;
       Application app = uiapp.Application;
       Document doc = uidoc.Document;
+      Document fdoc = null;
+      Transaction t = null;
 
       if( null == doc )
       {
@@ -220,88 +221,93 @@ namespace Stiffener
 
       #region Create a new structural stiffener family
 
-      string templateFileName = Path.Combine( _path,
-        _family_template_name + _family_template_ext );
+      // Check whether the family has already
+      // been created or loaded previously.
 
-      Document fdoc = app.NewFamilyDocument( 
-        templateFileName );
-
-      if( null == fdoc )
-      {
-        message = "Cannot create family document.";
-        return Result.Failed;
-      }
-
-      Transaction t = new Transaction( fdoc,
-        "Create structural stiffener family" );
-
-      t.Start();
-
-      CreateExtrusion( fdoc, _countour, _thicknessMm );
-
-      t.Commit();
-
-      // save our new family background document
-      // and reopen it in the Revit user interface:
-
-      string filename = Path.Combine( 
-        Path.GetTempPath(), _family_name + _rfa_ext );
-
-      SaveAsOptions opt = new SaveAsOptions();
-      opt.OverwriteExistingFile = true;
-
-      fdoc.SaveAs( filename, opt );
-
-      bool closeAndOpen = true;
-
-      if( closeAndOpen )
-      {
-        // cannot close the newly generated family file
-        // if it is the only open document; that throws 
-        // an exception saying "The active document may 
-        // not be closed from the API."
-
-        fdoc.Close( false );
-
-        // this obviously invalidates the uidoc 
-        // instance on the previously open document:
-        //uiapp.OpenAndActivateDocument( filename );
-      }
-      #endregion // Create a new structural stiffener family
-
-      #region Insert stiffener family instance
-
-      t = new Transaction( doc,
-        "Insert structural stiffener family instance" );
-
-      t.Start();
-
-      // load the family ... but check whether 
-      // it was already loaded first
-
-      Family family = null;
-
-      FilteredElementCollector a 
+      Family family
         = new FilteredElementCollector( doc )
-          .OfClass( typeof( Family ) );
+          .OfClass( typeof( Family ) )
+          .Cast<Family>()
+          .FirstOrDefault<Family>( e
+            => e.Name.Equals( _family_name ) );
 
-      int n = a.Count<Element>( 
-        e => e.Name.Equals( _family_name ) );
-
-      if( 0 < n )
+      if( null != family )
       {
-        family = a.First<Element>(
-          e => e.Name.Equals( _family_name ) ) 
-            as Family;
+        fdoc = family.Document;
       }
       else
       {
-        // calling this without a prior call 
-        // to SaveAs causes a "serious error":
-        //family = fdoc.LoadFamily( doc ); 
+        string templateFileName = Path.Combine( _path,
+          _family_template_name + _family_template_ext );
 
-        doc.LoadFamily( filename, out family );
+        fdoc = app.NewFamilyDocument(
+          templateFileName );
+
+        if( null == fdoc )
+        {
+          message = "Cannot create family document.";
+          return Result.Failed;
+        }
+
+        using( t = new Transaction( fdoc ) )
+        {
+          t.Start( "Create structural stiffener family" );
+
+          CreateExtrusion( fdoc, _countour, _thicknessMm );
+
+          t.Commit();
+        }
+
+        bool needToSaveBeforeLoad = false;
+
+        if( needToSaveBeforeLoad )
+        {
+          // Save our new family background document
+          // and reopen it in the Revit user interface.
+
+          string filename = Path.Combine(
+            Path.GetTempPath(), _family_name + _rfa_ext );
+
+          SaveAsOptions opt = new SaveAsOptions();
+          opt.OverwriteExistingFile = true;
+
+          fdoc.SaveAs( filename, opt );
+
+          bool closeAndOpen = true;
+
+          if( closeAndOpen )
+          {
+            // Cannot close the newly generated family file
+            // if it is the only open document; that throws 
+            // an exception saying "The active document may 
+            // not be closed from the API."
+
+            fdoc.Close( false );
+
+            // This obviously invalidates the uidoc 
+            // instance on the previously open document.
+            //uiapp.OpenAndActivateDocument( filename );
+          }
+        }
       }
+      #endregion // Create a new structural stiffener family
+
+      #region Load the structural stiffener family
+
+      // Must be outside transaction; otherwise Revit 
+      // throws InvalidOperationException: The document 
+      // must not be modifiable before calling LoadFamily. 
+      // Any open transaction must be closed prior the call.
+
+      // Calling this without a prior call to SaveAs
+      // caused a "serious error" in Revit 2012:
+
+      family = fdoc.LoadFamily( doc );
+
+      // Workaround for Revit 2012, 
+      // no longer needed in Revit 2014:
+
+      //doc.LoadFamily( filename, out family );
 
       FamilySymbol symbol = null;
 
@@ -309,62 +315,69 @@ namespace Stiffener
       {
         symbol = s;
 
-        // our family only contains one
-        // symbol, so pick it and leave
+        // Our family only contains one
+        // symbol, so pick it and leave.
 
         break;
       }
+      #endregion // Load the structural stiffener family
 
-      bool useSimpleInsertionPoint = true;
+      #region Insert stiffener family instance
 
-      if( useSimpleInsertionPoint )
+      using( t = new Transaction( doc ) )
       {
-        //Plane plane = app.Create.NewPlane( new XYZ( 1, 2, 3 ), XYZ.Zero );
-        //SketchPlane sketch = doc.Create.NewSketchPlane( plane );
-        //commandData.View.SketchPlane = sketch;
+        t.Start( "Insert structural stiffener family instance" );
 
-        XYZ p = uidoc.Selection.PickPoint(
-          "Please pick a point for family instance insertion" );
+        bool useSimpleInsertionPoint = true;
 
-        StructuralType st = StructuralType.UnknownFraming;
-
-        doc.Create.NewFamilyInstance( p, symbol, st );
-      }
-
-      bool useFaceReference = false;
-
-      if( useFaceReference )
-      {
-        Reference r = uidoc.Selection.PickObject( ObjectType.Face,
-          "Please pick a point on a face for family instance insertion" );
-
-        Element e = doc.GetElement( r.ElementId );
-        GeometryObject obj = e.GetGeometryObjectFromReference( r );
-        PlanarFace face = obj as PlanarFace;
-
-        if( null == face )
+        if( useSimpleInsertionPoint )
         {
-          message = "Please select a point on a planar face.";
-          t.RollBack();
-          return Result.Failed;
+          //Plane plane = app.Create.NewPlane( new XYZ( 1, 2, 3 ), XYZ.Zero );
+          //SketchPlane sketch = doc.Create.NewSketchPlane( plane );
+          //commandData.View.SketchPlane = sketch;
+
+          XYZ p = uidoc.Selection.PickPoint(
+            "Please pick a point for family instance insertion" );
+
+          StructuralType st = StructuralType.UnknownFraming;
+
+          doc.Create.NewFamilyInstance( p, symbol, st );
         }
-        else
+
+        bool useFaceReference = false;
+
+        if( useFaceReference )
         {
-          XYZ p = r.GlobalPoint;
-          XYZ v = face.Normal.CrossProduct( XYZ.BasisZ );
-          if( v.IsZeroLength() )
+          Reference r = uidoc.Selection.PickObject( 
+            ObjectType.Face,
+            "Please pick a point on a face for family instance insertion" );
+
+          Element e = doc.GetElement( r.ElementId );
+          GeometryObject obj = e.GetGeometryObjectFromReference( r );
+          PlanarFace face = obj as PlanarFace;
+
+          if( null == face )
           {
-            v = face.Normal.CrossProduct( XYZ.BasisX );
+            message = "Please select a point on a planar face.";
+            t.RollBack();
+            return Result.Failed;
           }
-          doc.Create.NewFamilyInstance( r, p, v, symbol );
+          else
+          {
+            XYZ p = r.GlobalPoint;
+            XYZ v = face.Normal.CrossProduct( XYZ.BasisZ );
+            if( v.IsZeroLength() )
+            {
+              v = face.Normal.CrossProduct( XYZ.BasisX );
+            }
+            doc.Create.NewFamilyInstance( r, p, v, symbol );
 
-          // this throws an exception saying that the face has no reference on it:
-          //doc.Create.NewFamilyInstance( face, p, v, symbol ); 
+            // This throws an exception saying that the face has no reference on it:
+            //doc.Create.NewFamilyInstance( face, p, v, symbol ); 
+          }
         }
+        t.Commit();
       }
-
-      t.Commit();
-
       #endregion // Insert stiffener family instance
 
       return Result.Succeeded;
