@@ -32,7 +32,8 @@ namespace Stiffener
     /// <summary>
     /// Family template library path
     /// </summary>
-    const string _path = "C:/ProgramData/Autodesk/RST 2012/Family Templates/English";
+    //const string _path = "C:/ProgramData/Autodesk/RST 2012/Family Templates/English";
+    const string _path = "C:/Users/All Users/Autodesk/RVT 2014/Family Templates/English";
 
     /// <summary>
     /// Family template filename stem
@@ -152,9 +153,7 @@ namespace Stiffener
     /// The points are defined in millimetres, 
     /// the returned CurveArray in feet.
     /// </summary>
-    CurveArray CreateProfile( 
-      List<XYZ> pts, 
-      CreationApplication creapp )
+    CurveArray CreateProfile( List<XYZ> pts )
     {
       CurveArray profile = new CurveArray();
 
@@ -164,7 +163,7 @@ namespace Stiffener
       {
         int j = (0 == i) ? n - 1 : i - 1;
 
-        profile.Append( creapp.NewLineBound(
+        profile.Append( Line.CreateBound(
           MmToFootPoint( pts[j] ), 
           MmToFootPoint( pts[i] ) ) );
       }
@@ -184,7 +183,7 @@ namespace Stiffener
     {
       FamilyItemFactory factory = doc.FamilyCreate;
       
-      CreationApplication creapp = doc.Application.Create;
+      //CreationApplication creapp = doc.Application.Create;
 
       //SketchPlane sketch = doc.get_Element( 
       //  new ElementId( 501 ) ) as SketchPlane;
@@ -195,7 +194,7 @@ namespace Stiffener
 
       CurveArrArray curveArrArray = new CurveArrArray();
 
-      curveArrArray.Append( CreateProfile( pts, creapp ) );
+      curveArrArray.Append( CreateProfile( pts ) );
 
       double extrusionHeight = MmToFoot( thickness );
 
@@ -339,7 +338,7 @@ namespace Stiffener
         Reference r = uidoc.Selection.PickObject( ObjectType.Face,
           "Please pick a point on a face for family instance insertion" );
 
-        Element e = doc.get_Element( r.ElementId );
+        Element e = doc.GetElement( r.ElementId );
         GeometryObject obj = e.GetGeometryObjectFromReference( r );
         PlanarFace face = obj as PlanarFace;
 
