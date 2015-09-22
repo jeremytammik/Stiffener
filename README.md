@@ -1,6 +1,8 @@
 # Stiffener
 
-Revit add-in to programmatically create and insert an extrusion family into the current project.
+Revit add-in to create and insert a family into the current project.
+
+To be precise, programmatically create a structural stiffener extrusion family definition and place an instance of it.
 
 For the full description, please refer to
 [The Building Coder](http://thebuildingcoder.typepad.com) discussion on
