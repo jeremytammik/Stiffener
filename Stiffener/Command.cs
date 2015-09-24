@@ -379,10 +379,11 @@ namespace Stiffener
           else
           {
             XYZ p = r.GlobalPoint;
-            XYZ v = face.Normal.CrossProduct( XYZ.BasisZ );
+            //XYZ v = face.Normal.CrossProduct( XYZ.BasisZ ); // 2015
+            XYZ v = face.FaceNormal.CrossProduct( XYZ.BasisZ ); // 2016
             if( v.IsZeroLength() )
             {
-              v = face.Normal.CrossProduct( XYZ.BasisX );
+              v = face.FaceNormal.CrossProduct( XYZ.BasisX );
             }
             doc.Create.NewFamilyInstance( r, p, v, symbol );
 
